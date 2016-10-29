@@ -1,3 +1,6 @@
+#include <climits>
+#include <cmath>
+#include "singly.cpp"
 
 //dot product function for 2 line segments that share an endpoint
 GLfloat dotProduct(struct vertex *point1, struct vertex *point2, struct vertex *point3)
@@ -93,11 +96,11 @@ bool noIntersects(singly linkedlist,vertex *lastVertex, vertex *newVertex)
 
 
 //a check for if a line exists in a polygon
-int numIntersects4Interior(singly linkedlist,GLfloat vertexX, GLfloat vertexY)
+int numIntersects4Interior(singly linkedlist,GLfloat vertexX, GLfloat vertexY, int max_x )
 {
 	int county = 0;
-	struct vertex *midpoint = linkedList.createVertex(vertexX, vertexY);
-	struct vertex *boundaryPoint = linkedList.createVertex(WINDOW_MAX_X, vertexY);
+	struct vertex *midpoint = linkedlist.createVertex(vertexX, vertexY, 0.0, 1.0);
+	struct vertex *boundaryPoint = linkedlist.createVertex(max_x, vertexY, 0.0, 1.0);
 	struct vertex *anotherLineVertex1=linkedlist.head;
 	struct vertex *anotherLineVertex2=linkedlist.head->next;
 	while (anotherLineVertex2!=NULL)
@@ -116,7 +119,7 @@ int numIntersects4Interior(singly linkedlist,GLfloat vertexX, GLfloat vertexY)
 
 
 //checks if proposed line will exists in side polygon by checking how many times it intersects as it goes to the edge of the window
-bool inThatThang(vertex *p1, vertex *p2)
+bool inThatThang(singly linkedlist, vertex *p1, vertex *p2)
 {
 
 	GLfloat line1x=p1->x, line1y=p1->y;
@@ -125,7 +128,7 @@ bool inThatThang(vertex *p1, vertex *p2)
 	GLfloat middyBoyX = (line1x + line2x)/2.0; 
 	GLfloat middyBoyY= (line1y + line2y)/2.0;
 	
-	int crossy = numIntersects4Interior(linkedList, middyBoyX, middyBoyY);
+	int crossy = numIntersects4Interior(linkedlist, middyBoyX, middyBoyY, INT_MAX);
 
 	if (crossy%2==1)//if it crosses an odd number of lines, it will exist inside the polygon
 		return true;//this is good

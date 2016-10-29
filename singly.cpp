@@ -7,7 +7,7 @@ using namespace std;
 class singly
 {
 	public:
-		vertex* createVertex(GLfloat xCoord, GLfloat yCoord);
+		vertex* createVertex(GLfloat xCoord, GLfloat yCoord, GLfloat zCoord, GLfloat wCoord);
 		triangle* createTriangle(vertex *vert1, vertex *vert2, vertex *vert3);
 		void append(vertex *node);
 		void append(triangle *node);
@@ -42,7 +42,7 @@ int singly::getLength()
 	return length;
 }
 //
-vertex* singly::createVertex(GLfloat xCoord, GLfloat yCoord)
+vertex* singly::createVertex(GLfloat xCoord, GLfloat yCoord, GLfloat zCoord, GLfloat wCoord)
 {
 	struct vertex *temp;
 	temp = new(struct vertex);
@@ -55,6 +55,8 @@ vertex* singly::createVertex(GLfloat xCoord, GLfloat yCoord)
 	{
 		temp->x=xCoord;
 		temp->y=yCoord;
+		temp->z=zCoord;
+		temp->w=wCoord;
 		temp->next=NULL;
 		return temp;
 	}

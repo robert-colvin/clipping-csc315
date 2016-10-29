@@ -1,12 +1,13 @@
 #include <GL/glut.h>
 
-struct vertex
+typedef struct vertex
 {
 	GLfloat x;
 	GLfloat y;
-	int w;
+	GLfloat z;
+	GLfloat w;
 	vertex *next;
-};
+} vertex;
 struct triangle
 {
 	vertex *p1;

@@ -2,6 +2,11 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+//#include "singly.cpp"
+#include <iostream>
+//#include <vector>
+//#include "myVertexMath.cpp"
+#include "myTesselate.cpp"
 
 #define WINDOW_MAX 1000
 #define WINDOW_MIN 0
@@ -10,18 +15,24 @@
 #define MAX 100
 
 /* Define the vertex data type */
-typedef struct vertex { 
+/*typedef struct vertex { 
     float x;
     float y;
     float z;
     float w;
 } vertex;
-
+*/
 /* Define these two variables to have a global scope */
 float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;
 
-
+float SCALE_UNIFORM = 1.0; 	//a single scale variable for all dimensions
+float reflected = -1; 		//-1 for no reflect, 1 for reflect
+singly linkedList;//list of points
+vector<vertex*> PolyVec;//for filled polygon after tesselation
+vector<triangle> triangles;//vector of triangle
+struct vertex *lastPoint=NULL;//these 2 ptrs help with tesselation
+struct vertex *twoPointsAgo=NULL;
 
 void vmatm (int SIZE, float *pA, float *pB)
 
@@ -54,7 +65,15 @@ void buildTranslate( float x, float y, float z, float *pA )
      pA[ 8] = 0.0; pA[ 9] = 0.0; pA[10] = 1.0; pA[11] =   z;
      pA[12] = 0.0; pA[13] = 0.0; pA[14] = 0.0; pA[15] = 1.0;
 }
-
+void buildScale(float scaleX,float scaleY,float scaleZ, float *pA)
+//Creates matrix to scale polygon according to a scale factor for each axis
+{
+	
+     pA[ 0] = scaleX; 	pA[ 1] = 0.0; 	 pA[ 2] = 0.0; 	  pA[ 3] =   0.0;
+     pA[ 4] = 0.0; 	pA[ 5] = scaleY; pA[ 6] = 0.0; 	  pA[ 7] =   0.0;
+     pA[ 8] = 0.0;	pA[ 9] = 0.0; 	 pA[10] = scaleZ; pA[11] =   0.0;
+     pA[12] = 0.0; 	pA[13] = 0.0; 	 pA[14] = 0.0; 	  pA[15] =   1.0;
+}
 void buildRotateZ( float theta, float *pA )
 {
 // Constructs rotation matrix about Z axis
@@ -71,8 +90,13 @@ void buildRotateZ( float theta, float *pA )
      pA[12] = 0.0;       pA[13] = 0.0;      pA[14] = 0.0; pA[15] = 1.0;
 }      
 
-
-
+void buildReflect2d(float reflect, float *pA)
+{//reflector variable set to -1 creates an identity matrix; set to 1, it reflects about vertical axis
+     pA[ 0] = (reflect * -1.0); pA[ 1] = 0.0; pA[ 2] = 0.0; pA[ 3] = 0.0;
+     pA[ 4] =  0.0; 		pA[ 5] = 1.0; pA[ 6] = 0.0; pA[ 7] = 0.0;
+     pA[ 8] =  0.0; 		pA[ 9] = 0.0; pA[10] = 1.0; pA[11] = 0.0;
+     pA[12] =  0.0; 		pA[13] = 0.0; pA[14] = 0.0; pA[15] = 1.0;
+}
 
 void applyTransformation( float *vp, int vpts, float *TM ) 
 // Applies the given transformation matrix TM to the vector vp containing
@@ -117,6 +141,14 @@ void PipeLine( float *vp, int vpts )
     // Translate to origin  
     buildTranslate( -WINDOW_MAX/2, -WINDOW_MAX/2, 0.0,  TM );
     applyTransformation( vp, vpts, TM );   	
+
+    //reflect operation
+    buildReflect2d(reflected, TM);
+    applyTransformation(vp, vpts, TM);
+    //scale operation
+    buildScale(SCALE_UNIFORM, SCALE_UNIFORM, SCALE_UNIFORM, TM);
+    applyTransformation(vp, vpts, TM);
+    
     // Perform the rotation operation
     buildRotateZ( SPIN, TM );	
     applyTransformation( vp, vpts, TM );
@@ -126,16 +158,25 @@ void PipeLine( float *vp, int vpts )
 
 }
 
-
 void defineArrow( float *apts )
 {//	    X		       Y		 Z       MYSTERY MEAT
-   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0;
-   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0;
-   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0;
-   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0;
-   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0;
-   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0;
-   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0;
+   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0; vertex *p1 = linkedList.createVertex((float)350.0,(float)450.0,(float)0.0,(float)1.0); 
+   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0; vertex *p2 = linkedList.createVertex((float)550.0,(float)450.0,(float)0.0,(float)1.0);
+   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0; vertex *p3 = linkedList.createVertex((float)550.0,(float)350.0,(float)0.0,(float)1.0);
+   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0; vertex *p4 = linkedList.createVertex((float)650.0,(float)500.0,(float)0.0,(float)1.0);
+   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0; vertex *p5 = linkedList.createVertex((float)550.0,(float)650.0,(float)0.0,(float)1.0);
+   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0; vertex *p6 = linkedList.createVertex((float)550.0,(float)550.0,(float)0.0,(float)1.0);
+   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0; vertex *p7 = linkedList.createVertex((float)350.0,(float)550.0,(float)0.0,(float)1.0);
+
+   linkedList.append(p1);
+   linkedList.append(p2);
+   linkedList.append(p3);
+   linkedList.append(p4);
+   linkedList.append(p5);
+   linkedList.append(p6);
+   linkedList.append(p7);
+
+
 }
 
 void toVertex ( float *apts, struct vertex *vp, int pts )
@@ -208,7 +249,7 @@ void display( void )
     defineArrow( apts );
 
     /* Now start the process of rotating */
-    PipeLine( apts, inPoints );
+    PipeLine( apts, inPoints);
     toVertex( apts, invp, inPoints );
 
     glColor3f(1.0, 0.0, 0.0);
@@ -228,23 +269,45 @@ void SpinDisplay(void)
     glutPostRedisplay();
 }
 
+bool insideViewport(int x, int y)
+{
+	bool insideX = (x < VIEWPORT_MAX) && (x > VIEWPORT_MIN);
+	bool insideY = (y < VIEWPORT_MAX) && (y > VIEWPORT_MIN);
 
+	return (insideX && insideY);
+}
 void mouse(int button, int state, int x, int y) 
 {
     switch (button) {
         case GLUT_LEFT_BUTTON:
-            if (state == GLUT_DOWN)
+            if (state == GLUT_DOWN )
             {
-                DELTA_SPIN = DELTA_SPIN + 1000000000.0;
-                glutIdleFunc(SpinDisplay);
+		if (insideViewport(x,y))
+		{
+                	DELTA_SPIN = DELTA_SPIN + 1.0;
+                	glutIdleFunc(SpinDisplay);
+		}
+		else
+		{
+			SCALE_UNIFORM = SCALE_UNIFORM * 1.05;		//INCREASE SCALE BY 5
+			glutPostRedisplay();
+		}
             }
             break;
         case GLUT_RIGHT_BUTTON:
             if (state == GLUT_DOWN)
             {
-                DELTA_SPIN = DELTA_SPIN - 1.0;
-                glutIdleFunc(SpinDisplay);
-            }
+		if (insideViewport(x,y))
+		{
+                	DELTA_SPIN = DELTA_SPIN - 1.0;
+                	glutIdleFunc(SpinDisplay);
+		}
+		else
+		{
+			SCALE_UNIFORM = SCALE_UNIFORM * 0.95;			//DECREASE SCALE BY 5
+                	glutPostRedisplay();
+            	}
+	    }
             break;
         default:
             break;
@@ -257,15 +320,24 @@ void mouse(int button, int state, int x, int y)
 void keyboard( unsigned char key, int x, int y )
 { 
     if ( key == 'q' || key == 'Q') exit(0);
-    if ( key == 'c' || key == 'C') {
+    if ( key == 'i' || key == 'I') 
+    {
+	reflected = -1.0;
         SPIN = 0.0;
-     
-   glutIdleFunc(display);
+	SCALE_UNIFORM = 1.0; 
+   	glutIdleFunc(display);
     }
-    if ( key == 'x' || key == 'X') {
+    if ( key == 'x' || key == 'X') 
+    {
         glutIdleFunc(NULL);
     }
-
+    if (key == 's' || key == 'S') 
+        DELTA_SPIN=0.0;
+    if (key == 'r' || key == 'R')
+    {//for reflection, flip sign of reflector variable
+	reflected = reflected * -1.0;
+	glutPostRedisplay();
+    }
 }
 
 

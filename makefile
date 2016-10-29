@@ -1,25 +1,29 @@
-OBJS=lukewarm.o singly.o myTesselate.o myVertexMath.o
+OBJS= singly.o myTesselate.o myVertexMath.o
 LIBS=-lglut -lGLU -lGL
 CC=g++
 CFLAG=-O3
-DEPS=structs.h
+HEADERS=structs.h
 
+all: Program1
 
-lukewarm.o: lukewarm.cpp $(DEPS)
-	$(CC) lukewarm.cpp $(LIBS) $(CFLAG) -o Program1
+Program1 : lukewarm.o $(OBJS)
+	$(CC) $(CFLAG) lukewarm.o $(OBJS) -o Program1 $(LIBS)
 
-myTesselate.o: myTesselate.cpp 
-	$(CC) myTesselate.cpp -c $(LIBS) $(CFLAG)
+lukewarm.o: lukewarm.cpp $(HEADERS)
+	$(CC) lukewarm.cpp $(CFLAG) -c
 
-myVertexMath.o: myVertexMath.cpp 
-	$(CC) myVertexMath.cpp -c $(LIBS) $(CFLAG)
+singly.o: singly.cpp $(HEADERS)
+	$(CC) singly.cpp $(CLAG) -c
 
-singly.o: singly.cpp 
-	$(CC) singly.cpp -c $(CFLAG)
+myTesselate.o: myTesselate.cpp $(HEADERS)
+	$(CC) myTesselate.cpp $(CFLAG) -c
+
+myVertexMath.o: myVertexMath.cpp $(HEADERS)
+	$(CC) myVertexMath.cpp $(CFLAG) -c
 
 clean:
-	rm myTesselate.o
-	rm myVertexMath.o
-	rm lukewarm.o
-	rm singly.o
-	rm Program1
+	rm *.o
+
+pristine:
+	rm *.o
+	touch *
