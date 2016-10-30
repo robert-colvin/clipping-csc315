@@ -1,4 +1,8 @@
+
 #include <GL/glut.h>
+
+#ifndef STRUCTS
+#define STRUCTS
 
 typedef struct vertex
 {
@@ -15,3 +19,6 @@ struct triangle
 	vertex *p3;
 	triangle *next;
 };
+
+#endif
+

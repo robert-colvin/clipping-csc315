@@ -1,6 +1,10 @@
+#ifndef MY_VERTEX_MATH
+#define MY_VERTEX_MATH
+
 #include <climits>
 #include <cmath>
-#include "singly.cpp"
+#include "singly.h"
+#include "prototypes.h"
 
 //dot product function for 2 line segments that share an endpoint
 GLfloat dotProduct(struct vertex *point1, struct vertex *point2, struct vertex *point3)
@@ -158,4 +162,5 @@ GLfloat crossProduct(struct vertex *point1, struct vertex *point2, struct vertex
 	return crossProductZcomponent;
 }
 
+#endif
 

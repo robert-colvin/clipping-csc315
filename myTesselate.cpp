@@ -1,8 +1,13 @@
+
+#ifndef MY_TESSELATE
+#define MY_TESSELATE
+
 using namespace std;
 
 #include <vector>
-#include "myVertexMath.cpp"
-//#include "singly.cpp"
+#include "structs.h"
+#include "singly.h"
+#include "prototypes.h"
 
 //to draw a filled, untesselated polygon
 void makeThePolygonSucka(/*singly linkedlist, */vector<vertex*> PolyVec)
@@ -237,3 +242,5 @@ void tesselateItSucka(singly linkedlist, vector<triangle> triangles)
 		}
 	}
 }
+
+#endif

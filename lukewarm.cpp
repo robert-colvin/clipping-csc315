@@ -2,11 +2,11 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
-//#include "singly.cpp"
 #include <iostream>
-//#include <vector>
-//#include "myVertexMath.cpp"
-#include "myTesselate.cpp"
+#include <vector>
+#include "structs.h"
+#include "singly.h"
+#include "globals.h"
 
 #define WINDOW_MAX 1000
 #define WINDOW_MIN 0
@@ -14,14 +14,6 @@
 #define VIEWPORT_MIN 100
 #define MAX 100
 
-/* Define the vertex data type */
-/*typedef struct vertex { 
-    float x;
-    float y;
-    float z;
-    float w;
-} vertex;
-*/
 /* Define these two variables to have a global scope */
 float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;

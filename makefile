@@ -2,7 +2,7 @@ OBJS= singly.o myTesselate.o myVertexMath.o
 LIBS=-lglut -lGLU -lGL
 CC=g++
 CFLAG=-O3
-HEADERS=structs.h
+HEADERS=structs.h singly.h globals.h prototypes.h
 
 all: Program1
 
