@@ -18,9 +18,11 @@ class singly
 		void deleteTheWholeDamnThing();
 		int getLength();
 		void printList();
+		void put_atIndex_(vertex *node, int index);
 		vertex* last();
 		vertex *head;
 		triangle *t_head;
+		
 		singly()
 		{
 			t_head = new struct triangle;

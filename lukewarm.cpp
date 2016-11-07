@@ -1,12 +1,26 @@
+
+/*****************************************
+ * Beginning Animation Code #2 - Rotation
+ * 
+ * Prof A.J. Pounds, Ph.D.
+ * Mercer Univeristy
+ * Fall 2014
+ * 
+ */
+
+using namespace std;
+
+#include <iostream>
+#include <vector>
 #include <cmath>
+#include <list>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
-#include <iostream>
-#include <vector>
 #include "structs.h"
-#include "singly.h"
 #include "globals.h"
+#include "prototypes.h"
+#include "sutherlandHodgman.cpp"
 
 #define WINDOW_MAX 1000
 #define WINDOW_MIN 0
@@ -14,17 +28,21 @@
 #define VIEWPORT_MIN 100
 #define MAX 100
 
+vertex lb,lt,rt,rb;
+
+float SCALE_UNIFORM = 1.0; 	//a single scale variable for all dimensions
+float reflected = -1; 		//-1 for no reflect, 1 for reflect
+
 /* Define these two variables to have a global scope */
 float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;
 
-float SCALE_UNIFORM = 1.0; 	//a single scale variable for all dimensions
-float reflected = -1; 		//-1 for no reflect, 1 for reflect
-singly linkedList;//list of points
-vector<vertex*> PolyVec;//for filled polygon after tesselation
-vector<triangle> triangles;//vector of triangle
-struct vertex *lastPoint=NULL;//these 2 ptrs help with tesselation
-struct vertex *twoPointsAgo=NULL;
+list<vertex*> verts;
+//matrix stuff
+/*
+void buildEdges(void)
+{
+	lb = {VIEWPORT_MIN,VIEWPORT_*/
 
 void vmatm (int SIZE, float *pA, float *pB)
 
@@ -49,23 +67,15 @@ void vmatm (int SIZE, float *pA, float *pB)
 }
 
 
-void buildTranslate( float x, float y, float z, float *pA )
+void buildTranslate( float xshift, float yshift, float zshift, float *pA )
 // Constructs tranlation matrix to translate along x, y, and z axes
 {
-     pA[ 0] = 1.0; pA[ 1] = 0.0; pA[ 2] = 0.0; pA[ 3] =   x;
-     pA[ 4] = 0.0; pA[ 5] = 1.0; pA[ 6] = 0.0; pA[ 7] =   y;
-     pA[ 8] = 0.0; pA[ 9] = 0.0; pA[10] = 1.0; pA[11] =   z;
-     pA[12] = 0.0; pA[13] = 0.0; pA[14] = 0.0; pA[15] = 1.0;
+     pA[ 0] = 1.0; pA[ 1] = 0.0; pA[ 2] = 0.0; pA[ 3] =   xshift;
+     pA[ 4] = 0.0; pA[ 5] = 1.0; pA[ 6] = 0.0; pA[ 7] =   yshift;
+     pA[ 8] = 0.0; pA[ 9] = 0.0; pA[10] = 1.0; pA[11] =   zshift;
+     pA[12] = 0.0; pA[13] = 0.0; pA[14] = 0.0; pA[15] =      1.0;
 }
-void buildScale(float scaleX,float scaleY,float scaleZ, float *pA)
-//Creates matrix to scale polygon according to a scale factor for each axis
-{
-	
-     pA[ 0] = scaleX; 	pA[ 1] = 0.0; 	 pA[ 2] = 0.0; 	  pA[ 3] =   0.0;
-     pA[ 4] = 0.0; 	pA[ 5] = scaleY; pA[ 6] = 0.0; 	  pA[ 7] =   0.0;
-     pA[ 8] = 0.0;	pA[ 9] = 0.0; 	 pA[10] = scaleZ; pA[11] =   0.0;
-     pA[12] = 0.0; 	pA[13] = 0.0; 	 pA[14] = 0.0; 	  pA[15] =   1.0;
-}
+
 void buildRotateZ( float theta, float *pA )
 {
 // Constructs rotation matrix about Z axis
@@ -81,16 +91,17 @@ void buildRotateZ( float theta, float *pA )
      pA[ 8] = 0.0;       pA[ 9] = 0.0;      pA[10] = 1.0; pA[11] = 0.0;
      pA[12] = 0.0;       pA[13] = 0.0;      pA[14] = 0.0; pA[15] = 1.0;
 }      
-
-void buildReflect2d(float reflect, float *pA)
-{//reflector variable set to -1 creates an identity matrix; set to 1, it reflects about vertical axis
-     pA[ 0] = (reflect * -1.0); pA[ 1] = 0.0; pA[ 2] = 0.0; pA[ 3] = 0.0;
-     pA[ 4] =  0.0; 		pA[ 5] = 1.0; pA[ 6] = 0.0; pA[ 7] = 0.0;
-     pA[ 8] =  0.0; 		pA[ 9] = 0.0; pA[10] = 1.0; pA[11] = 0.0;
-     pA[12] =  0.0; 		pA[13] = 0.0; pA[14] = 0.0; pA[15] = 1.0;
+void buildScale(float scaleX,float scaleY,float scaleZ, float *pA)
+//Creates matrix to scale polygon according to a scale factor for each axis
+{
+	
+     pA[ 0] = scaleX; 	pA[ 1] = 0.0; 	 pA[ 2] = 0.0; 	  pA[ 3] =   0.0;
+     pA[ 4] = 0.0; 	pA[ 5] = scaleY; pA[ 6] = 0.0; 	  pA[ 7] =   0.0;
+     pA[ 8] = 0.0;	pA[ 9] = 0.0; 	 pA[10] = scaleZ; pA[11] =   0.0;
+     pA[12] = 0.0; 	pA[13] = 0.0; 	 pA[14] = 0.0; 	  pA[15] =   1.0;
 }
 
-void applyTransformation( float *vp, int vpts, float *TM ) 
+void applyTransformation( float *vp, int vpts, float *TM/*, float *pA, list<vertex*> l*/ ) 
 // Applies the given transformation matrix TM to the vector vp containing
 // all of the homegenous coordinates to define the object
 {
@@ -111,11 +122,19 @@ void applyTransformation( float *vp, int vpts, float *TM )
 		*(vp+(i*4)+1) = *(tmp+1); 
 		*(vp+(i*4)+2) = *(tmp+2); 
 		*(vp+(i*4)+3) = *(tmp+3); 
-        }
+        }/*
+	for (list<vertex*>::iterator it = l.begin();it!=l.end();++it)
+	{
+		(*it)->x = ((*it)->x * pA[0]) + ((*it)->y * pA[4]) + ((*it)->z * pA[ 8]) + ((*it)->w * pA[12]);
+		(*it)->y = ((*it)->x * pA[1]) + ((*it)->y * pA[5]) + ((*it)->z * pA[ 9]) + ((*it)->w * pA[13]);
+		(*it)->z = ((*it)->x * pA[2]) + ((*it)->y * pA[6]) + ((*it)->z * pA[10]) + ((*it)->w * pA[14]);
+		(*it)->w = ((*it)->x * pA[3]) + ((*it)->y * pA[7]) + ((*it)->z * pA[11]) + ((*it)->w * pA[15]);
+	}*/
+		
 }
 
 	
-void PipeLine( float *vp, int vpts )
+void PipeLine( float *vp, int vpts/*, list<vertex*> l*/ )
 {
     /*  This routine will run the graphics transformation pipeline. 
      *  It is operating on x,y,z homogenous coordinates defined in a linear
@@ -132,43 +151,54 @@ void PipeLine( float *vp, int vpts )
 
     // Translate to origin  
     buildTranslate( -WINDOW_MAX/2, -WINDOW_MAX/2, 0.0,  TM );
-    applyTransformation( vp, vpts, TM );   	
-
-    //reflect operation
-    buildReflect2d(reflected, TM);
-    applyTransformation(vp, vpts, TM);
+    applyTransformation( vp, vpts, TM/*, l*/ );   
     //scale operation
     buildScale(SCALE_UNIFORM, SCALE_UNIFORM, SCALE_UNIFORM, TM);
-    applyTransformation(vp, vpts, TM);
-    
+    applyTransformation(vp, vpts, TM/*, l*/);
+    	
     // Perform the rotation operation
     buildRotateZ( SPIN, TM );	
-    applyTransformation( vp, vpts, TM );
+    applyTransformation( vp, vpts, TM/*, l*/ );
     // Translate back to point
     buildTranslate( WINDOW_MAX/2, WINDOW_MAX/2, 0.0,  TM );
-    applyTransformation( vp, vpts, TM );   	
+    applyTransformation( vp, vpts, TM/*, l*/ );   	
 
 }
 
-void defineArrow( float *apts )
-{//	    X		       Y		 Z       MYSTERY MEAT
-   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0; vertex *p1 = linkedList.createVertex((float)350.0,(float)450.0,(float)0.0,(float)1.0); 
-   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0; vertex *p2 = linkedList.createVertex((float)550.0,(float)450.0,(float)0.0,(float)1.0);
-   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0; vertex *p3 = linkedList.createVertex((float)550.0,(float)350.0,(float)0.0,(float)1.0);
-   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0; vertex *p4 = linkedList.createVertex((float)650.0,(float)500.0,(float)0.0,(float)1.0);
-   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0; vertex *p5 = linkedList.createVertex((float)550.0,(float)650.0,(float)0.0,(float)1.0);
-   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0; vertex *p6 = linkedList.createVertex((float)550.0,(float)550.0,(float)0.0,(float)1.0);
-   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0; vertex *p7 = linkedList.createVertex((float)350.0,(float)550.0,(float)0.0,(float)1.0);
 
-   linkedList.append(p1);
-   linkedList.append(p2);
-   linkedList.append(p3);
-   linkedList.append(p4);
-   linkedList.append(p5);
-   linkedList.append(p6);
-   linkedList.append(p7);
+void defineArrow( float *apts/*, list<vertex*> l*/ )
+{
+   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0;
+   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0;
+   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0;
+   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0;
+   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0;
+   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0;
+   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0;
+/*
+   vertex v6 = {350.0,550.0,0.0,1.0,NULL};
+   vertex v5 = {550.0,550.0,0.0,1.0,&v6};
+   vertex v4 = {550.0,650.0,0.0,1.0,&v5};
+   vertex v3 = {650.0,500.0,0.0,1.0,&v4};
+   vertex v2 = {550.0,350.0,0.0,1.0,&v3};
+   vertex v1 = {550.0,450.0,0.0,1.0,&v2};
+   vertex v0 = {350.0,450.0,0.0,1.0,&v1};
 
-
+   l.push_back(&v0);
+   l.push_back(&v1);
+   l.push_back(&v2);
+   l.push_back(&v3);
+   l.push_back(&v4);
+   l.push_back(&v5);
+   l.push_back(&v6);
+   /*
+   verts.push_back(&v0);
+   verts.push_back(&v1);
+   verts.push_back(&v2);
+   verts.push_back(&v3);
+   verts.push_back(&v4);
+   verts.push_back(&v5);
+   verts.push_back(&v6);*/
 }
 
 void toVertex ( float *apts, struct vertex *vp, int pts )
@@ -185,13 +215,14 @@ void toVertex ( float *apts, struct vertex *vp, int pts )
 }
 
 
-void drawArrow( vertex *vp, int points )
+void drawArrow(/*list<vertex*> l*/vertex *vp, int points )
 {
     int i;
 
+//    list<vertex*>::iterator it;
     glBegin(GL_LINE_LOOP);
-    for (i=0;i<points;i++)
-        glVertex2f( (vp+i)->x, (vp+i)->y );
+    for (/*it=l.begin();it!=l.end();++it*/i=0;i<points;i++)
+        glVertex2f( /*(*it)->x, (*it)->y*/(vp+i)->x,(vp+i)->y );
     glEnd();
 
 }
@@ -218,7 +249,7 @@ void myinit( void )
 void display( void )
 {
 
-    int inPoints;             // The number of points in the arrow 
+    int numArrowPoints;             // The number of points in the arrow 
     float point[MAX];         // Array to hold homogenous coordinates for arrow
     float *apts;              // Pointer for point array 
 
@@ -229,7 +260,7 @@ void display( void )
     apts = &point[0];         // the pointer to the array of points 
     invp = &inVertexArray[0]; // the pointer to the array of vertices
 
-    inPoints = 7;             // the actual number of points in the arrow
+    numArrowPoints = 7;             // the actual number of points in the arrow
     
     glClear(GL_COLOR_BUFFER_BIT);  /*clear the window */
 
@@ -241,13 +272,49 @@ void display( void )
     defineArrow( apts );
 
     /* Now start the process of rotating */
-    PipeLine( apts, inPoints);
-    toVertex( apts, invp, inPoints );
+    PipeLine( apts, numArrowPoints );
+    toVertex( apts, invp, numArrowPoints );
+
+	struct vertex l[2] = {{VIEWPORT_MIN,VIEWPORT_MIN,0.0,1.0,NULL},{VIEWPORT_MIN,VIEWPORT_MAX,0.0,1.0,NULL}};
+	struct vertex r[2] = {{VIEWPORT_MAX,VIEWPORT_MIN,0.0,1.0,NULL},{VIEWPORT_MAX,VIEWPORT_MAX,0.0,1.0,NULL}};
+	struct vertex t[2] = {{VIEWPORT_MIN,VIEWPORT_MAX,0.0,1.0,NULL},{VIEWPORT_MAX,VIEWPORT_MAX,0.0,1.0,NULL}};
+	struct vertex b[2] = {{VIEWPORT_MIN,VIEWPORT_MIN,0.0,1.0,NULL},{VIEWPORT_MAX,VIEWPORT_MIN,0.0,1.0,NULL}};
+
+	struct vertex *lclip = &l[0];
+	struct vertex *rclip = &r[0];
+	struct vertex *bclip = &b[0];
+	struct vertex *tclip = &t[0];
+
+	struct vertex outVertexArray[MAX];
+	struct vertex *outvp;
+
+	int outLength = 0;
+	int *outLengthPtr = &outLength;
+
+
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, lclip);
+
+	invp = outvp;
+	numArrowPoints = *outLengthPtr;
+
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, rclip);
+
+	invp = outvp;
+	numArrowPoints = *outLengthPtr;
+	
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, bclip);
+
+	invp = outvp;
+	numArrowPoints = *outLengthPtr;
+	
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, tclip);
+	
+	invp = outvp;
+	numArrowPoints = *outLengthPtr;
 
     glColor3f(1.0, 0.0, 0.0);
-
     /* Draw Scaled and Rotated Arrow */
-    drawArrow( invp, inPoints );
+    drawArrow( invp, numArrowPoints );
     glutSwapBuffers();
 
 
@@ -260,7 +327,6 @@ void SpinDisplay(void)
     if (SPIN > 360.0) SPIN = SPIN - 360.0;
     glutPostRedisplay();
 }
-
 bool insideViewport(int x, int y)
 {
 	bool insideX = (x < VIEWPORT_MAX) && (x > VIEWPORT_MIN);
@@ -268,6 +334,8 @@ bool insideViewport(int x, int y)
 
 	return (insideX && insideY);
 }
+
+
 void mouse(int button, int state, int x, int y) 
 {
     switch (button) {
@@ -305,10 +373,6 @@ void mouse(int button, int state, int x, int y)
             break;
     }
 }
-
- 
-
-
 void keyboard( unsigned char key, int x, int y )
 { 
     if ( key == 'q' || key == 'Q') exit(0);

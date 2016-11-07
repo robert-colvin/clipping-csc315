@@ -84,6 +84,29 @@ void singly::append(vertex *node)
 	}
 	length++;
 }
+void singly::put_atIndex_(vertex *node, int index)
+{
+	if (getLength() == 0 || getLength() <= index)
+	{
+		append(node);
+		return;
+	}
+	else
+	{
+		int count = 0;
+		vertex *b4 = head;
+		vertex *during;
+		while (count < index-1)
+		{
+			b4=b4->next;
+			count++;
+		}
+		during = b4->next;
+		node->next = during->next;
+		during = node;
+
+	}
+}
 /*void singly::append(triangle *node)
 {
 	struct triangle *tempStart;
