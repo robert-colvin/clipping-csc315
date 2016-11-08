@@ -285,18 +285,19 @@ void display( void )
 	struct vertex *bclip = &b[0];
 	struct vertex *tclip = &t[0];
 
-	struct vertex outVertexArray[MAX];
+	//struct vertex outVertexArray[MAX];
 	struct vertex *outvp;
+	outvp = new vertex[MAX];
 
 	int outLength = 0;
 	int *outLengthPtr = &outLength;
 
 
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, lclip);
-
+cout <<numArrowPoints<<endl;
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-
+cout << numArrowPoints <<endl;
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, rclip);
 
 	invp = outvp;
