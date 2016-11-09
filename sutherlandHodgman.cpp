@@ -6,6 +6,9 @@ typedef struct vertex {
 */
 /*typedef vertex edge[2];
 //typedef vertex vertexArray[100];	/* MAX is a declared constant */
+#include <iostream>
+//#include <vector>
+//#include "structs.h"
 void Intersect(vertex first, vertex second, vertex *clipBoundary,
 			  vertex *intersectPt)
 {
@@ -20,7 +23,7 @@ void Intersect(vertex first, vertex second, vertex *clipBoundary,
 	}
 }
 
-bool Inside(vertex testVertex, vertex *clipBoundary)
+bool Inside(vertex testVertex, vertex* clipBoundary)
 {
 	if (clipBoundary[1].x > clipBoundary[0].x)	/*bottom*/
 		if (testVertex.y >= clipBoundary[0].y)
@@ -54,15 +57,22 @@ void SutherlandHodgmanPolygonClip(vertex *inVertexArray,
 	s = inVertexArray[inLength - 1];	/* Start with the last vertex in inVertexArray */
 	for (j = 0; j < inLength; j++) {
 		p = inVertexArray[j];	/* Now s and p correspond to the vertices in Fig.3.33 */
+		cout << "s is " << s.x << ", " << s.y<<endl;
+		cout << "p is " << p.x << ", " << p.y<<endl;
+		cout << "clip bound is (" << clip_boundary[0].x << ", " << clip_boundary[0].y<< ") and ("<<clip_boundary[1].x<<", "<<clip_boundary[1].y<<")"<<endl;
 		if (Inside(p, clip_boundary)) {	/* Cases 1 and 4 */
-			if (Inside(s, clip_boundary))
+cout <<63<<endl;
+			if (Inside(s, clip_boundary)){
+			cout<<65<<endl;
 				Output(p, outLength, outVertexArray);	/* Case 1 */
+			}
 			else {										/* Case 4 */
 				Intersect(s, p, clip_boundary, &i);
 				Output(i, outLength, outVertexArray);
 				Output(p, outLength, outVertexArray);
 			}
 		} else if(Inside(s, clip_boundary)) {			/* Cases 2 and 3 */
+			cout<<74<<endl;
 			Intersect(s, p, clip_boundary, &i);			/* Case 2 */
 			Output(i, outLength, outVertexArray);
 		}												/* No action for case 3 */
