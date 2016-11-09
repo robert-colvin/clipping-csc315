@@ -1,10 +1,10 @@
 
 /*****************************************
- * Beginning Animation Code #2 - Rotation
+ * A kinda warm, but not really warm enough to be comfortable clipping program. featuring tesselation
  * 
- * Prof A.J. Pounds, Ph.D.
- * Mercer Univeristy
- * Fall 2014
+ * Robert Colvin (Dr.Doom)
+ * Mercer University
+ * Fall 2016
  * 
  */
 
@@ -36,6 +36,7 @@ float reflected = -1; 		//-1 for no reflect, 1 for reflect
 /* Define these two variables to have a global scope */
 float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;
+
 
 list<vertex*> verts;
 //matrix stuff
@@ -221,9 +222,12 @@ void drawArrow(/*list<vertex*> l*/vertex *vp, int points )
     int i;
 
 //    list<vertex*>::iterator it;
+	cout <<"------------------------------\n";
     glBegin(GL_LINE_LOOP);
-    for (/*it=l.begin();it!=l.end();++it*/i=0;i<points;i++)
+    for (/*it=l.begin();it!=l.end();++it*/i=0;i<points;i++){
         glVertex2f( /*(*it)->x, (*it)->y*/(vp+i)->x,(vp+i)->y );
+	cout<<"point "<<i<<" is "<<(vp+i)->x<<", " << (vp+i)->y <<endl;
+    }
     glEnd();
 
 }
@@ -293,25 +297,21 @@ void display( void )
 
 
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, l);
-//cout <<numArrowPoints<<endl;
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-//cout << numArrowPoints <<endl;
-	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, r);
 
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, r);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
 	
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, b);
-
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
 	
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, t);
-	
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-
+    
     glColor3f(1.0, 0.0, 0.0);
     /* Draw Scaled and Rotated Arrow */
     drawArrow( invp, numArrowPoints );
