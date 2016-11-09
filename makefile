@@ -1,4 +1,4 @@
-OBJS= singly.o myTesselate.o myVertexMath.o
+OBJS= singly.o myTesselate.o myVertexMath.o #sutherlandHodgman.o
 LIBS=-lglut -lGLU -lGL
 CC=g++
 #CFLAG=-O3
@@ -29,6 +29,9 @@ myTesselate.o: myTesselate.cpp $(HEADERS)
 
 myVertexMath.o: myVertexMath.cpp $(HEADERS)
 	$(CC) myVertexMath.cpp $(CFLAG) -c
+
+#sutherlandHodgman.o: sutherlandHodgman.cpp $(HEADERS)
+#	$(CC) sutherlandHodgman.cpp $(CFLAG) -c
 
 clean:
 	rm *.o

@@ -101,7 +101,13 @@ void buildScale(float scaleX,float scaleY,float scaleZ, float *pA)
      pA[ 8] = 0.0;	pA[ 9] = 0.0; 	 pA[10] = scaleZ; pA[11] =   0.0;
      pA[12] = 0.0; 	pA[13] = 0.0; 	 pA[14] = 0.0; 	  pA[15] =   1.0;
 }
-
+void buildReflect2d(float reflect, float *pA)
+{//reflector variable set to -1 creates an identity matrix; set to 1, it reflects about vertical axis
+     pA[ 0] = (reflect * -1.0); pA[ 1] = 0.0; pA[ 2] = 0.0; pA[ 3] = 0.0;
+     pA[ 4] =  0.0; 		pA[ 5] = 1.0; pA[ 6] = 0.0; pA[ 7] = 0.0;
+     pA[ 8] =  0.0; 		pA[ 9] = 0.0; pA[10] = 1.0; pA[11] = 0.0;
+     pA[12] =  0.0; 		pA[13] = 0.0; pA[14] = 0.0; pA[15] = 1.0;
+}
 void applyTransformation( float *vp, int vpts, float *TM/*, float *pA, list<vertex*> l*/ ) 
 // Applies the given transformation matrix TM to the vector vp containing
 // all of the homegenous coordinates to define the object
@@ -152,7 +158,10 @@ void PipeLine( float *vp, int vpts/*, list<vertex*> l*/ )
 
     // Translate to origin  
     buildTranslate( -WINDOW_MAX/2, -WINDOW_MAX/2, 0.0,  TM );
-    applyTransformation( vp, vpts, TM/*, l*/ );   
+    applyTransformation( vp, vpts, TM/*, l*/ );  
+    //reflect operation
+    buildReflect2d(reflected, TM);
+    applyTransformation(vp, vpts, TM); 
     //scale operation
     buildScale(SCALE_UNIFORM, SCALE_UNIFORM, SCALE_UNIFORM, TM);
     applyTransformation(vp, vpts, TM/*, l*/);
@@ -176,7 +185,7 @@ void defineArrow( float *apts/*, list<vertex*> l*/ )
    apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0;
    apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0;
    apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0;
-   apts[28] = 350.0;  apts[29] = 450.0; apts[30] = 0.0; apts[31] = 1.0;
+ //  apts[28] = 350.0;  apts[29] = 450.0; apts[30] = 0.0; apts[31] = 1.0;
 /*
    vertex v6 = {350.0,550.0,0.0,1.0,NULL};
    vertex v5 = {550.0,550.0,0.0,1.0,&v6};
@@ -265,7 +274,7 @@ void display( void )
     apts = &point[0];         // the pointer to the array of points 
     invp = &inVertexArray[0]; // the pointer to the array of vertices
 
-    numArrowPoints = 8;             // the actual number of points in the arrow
+    numArrowPoints = 7;             // the actual number of points in the arrow
     
     glClear(GL_COLOR_BUFFER_BIT);  /*clear the window */
 
@@ -296,19 +305,22 @@ void display( void )
 	int *outLengthPtr = new int;
 
 
-	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, l);
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, lclip);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-
-	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, r);
+	//delete outvp;
+	outvp = new vertex[MAX];
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, rclip);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-	
-	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, b);
+	//delete outvp;
+	outvp = new vertex[MAX];
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, bclip);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-	
-	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, t);
+	//delete outvp;
+	outvp = new vertex[MAX];
+	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, tclip);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
     
