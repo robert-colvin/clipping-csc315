@@ -38,7 +38,7 @@ float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;
 
 
-list<vertex*> verts;
+//list<vertex*> verts;
 //matrix stuff
 /*
 void buildEdges(void)
@@ -139,8 +139,20 @@ void applyTransformation( float *vp, int vpts, float *TM/*, float *pA, list<vert
 	}*/
 		
 }
+void arrayToList(vertex *invp, int inLength, list<vertex*> &list)
+{
+	list.clear();
 
-	
+	for (int i=0;i<inLength;i++){
+		vertex *vert = new vertex;
+		vert = &invp[i];
+		list.push_back(vert);
+		cout << list.back()->x<<"  "<<list.back()->y<<endl;
+		//cout << "&   "<<vert.x<<"   "<<vert.y<<endl;
+	}
+
+}
+
 void PipeLine( float *vp, int vpts/*, list<vertex*> l*/ )
 {
     /*  This routine will run the graphics transformation pipeline. 
@@ -226,19 +238,20 @@ void toVertex ( float *apts, struct vertex *vp, int pts )
 }
 
 
-void drawArrow(/*list<vertex*> l*/vertex *vp, int points )
+void drawArrow(list<vertex*> l/*vertex *vp, int points*/ )
 {
     int i;
 
-//    list<vertex*>::iterator it;
+
+    list<vertex*>::iterator it;
 	cout <<"------------------------------\n";
     glBegin(GL_LINE_LOOP);
-    for (/*it=l.begin();it!=l.end();++it*/i=0;i<points;i++){
-        glVertex2f( /*(*it)->x, (*it)->y*/(vp+i)->x,(vp+i)->y );
-	cout<<"point "<<i<<" is "<<(vp+i)->x<<", " << (vp+i)->y <<endl;
+    for (it=l.begin();it!=l.end();++it/*i=0;i<points;i++*/){
+        glVertex2f( (*it)->x, (*it)->y/*(vp+i)->x,(vp+i)->y*/ );
+//	cout<<"point "<<i<<" is "<<it->x/*(vp+i)->x*/<<", " << /*(vp+i)->y*/it->y <<endl;
     }
     glEnd();
-
+//cout << l.size()<<" length"<<endl;
 }
 
 
@@ -323,10 +336,13 @@ void display( void )
 	SutherlandHodgmanPolygonClip(invp, outvp, numArrowPoints, outLengthPtr, tclip);
 	invp = outvp;
 	numArrowPoints = *outLengthPtr;
-    
+
+	list<vertex*> verts;
+	arrayToList(invp,numArrowPoints,verts);	
+   	cout<<verts.size()<<endl; 
     glColor3f(1.0, 0.0, 0.0);
     /* Draw Scaled and Rotated Arrow */
-    drawArrow( invp, numArrowPoints );
+    drawArrow(verts /*invp, numArrowPoints*/ );
     glutSwapBuffers();
 
 	delete outLengthPtr;
