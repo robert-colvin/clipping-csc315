@@ -17,7 +17,7 @@ typedef struct triangle
 	vertex *p1;
 	vertex *p2;
 	vertex *p3;
-	triangle *next;
+	//triangle *next;
 } triangle;
 typedef struct line
 {

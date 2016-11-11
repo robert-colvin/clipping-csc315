@@ -1,26 +1,12 @@
-
-/*****************************************
- * A kinda warm, but not really warm enough to be comfortable clipping program. featuring tesselation
- * 
- * Robert Colvin (Dr.Doom)
- * Mercer University
- * Fall 2016
- * 
- */
-
 using namespace std;
 
+#include <math.h>
+#include <stdio.h>
 #include <iostream>
-#include <vector>
-#include <cmath>
-#include <list>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include "structs.h"
-#include "globals.h"
-#include "prototypes.h"
-#include "sutherlandHodgman.cpp"
 
 #define WINDOW_MAX 1000
 #define WINDOW_MIN 0
@@ -28,16 +14,236 @@ using namespace std;
 #define VIEWPORT_MIN 100
 #define MAX 100
 
-//vertex lb,lt,rt,rb;
-
+float xshift, yshift;
 float SCALE_UNIFORM = 1.0; 	//a single scale variable for all dimensions
 float reflected = -1; 		//-1 for no reflect, 1 for reflect
-
+bool showFilled = false;
 /* Define these two variables to have a global scope */
 float DELTA_SPIN = 0.0;
 float SPIN  = 0.0;
+//unconditional compile---------------------------------------------------------------------------------------------------------
+void display( void );
 
-bool showFilled = false;
+void defineArrow( float *apts )
+{
+   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0;
+   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0;
+   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0;
+   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0;
+   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0;
+   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0;
+   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0;
+
+}
+void toVertex ( float *apts, struct vertex *vp, int pts )
+{
+	int i;
+
+	for (i=0;i<pts;i++)
+	{
+	   (vp+i)->x = *(apts+(i*4)+0);
+	   (vp+i)->y = *(apts+(i*4)+1);
+	   (vp+i)->z = *(apts+(i*4)+2);
+	   (vp+i)->w = *(apts+(i+4)+3);
+	}
+}
+
+void myinit( void )
+{
+    /* attributes */
+
+    glClearColor(0.0, 0.0, 0.0, 1.0); /* black background */
+    glPointSize(1.0);
+
+    /* set up viewing */
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0.0, (float) WINDOW_MAX, 
+            0.0, (float) WINDOW_MAX);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+
+void SpinDisplay(void)
+{
+    SPIN = SPIN + DELTA_SPIN;
+    if (SPIN > 360.0) SPIN = SPIN - 360.0;
+    glutPostRedisplay();
+}
+bool insideViewport(int x, int y)
+{
+	bool insideX = (x < VIEWPORT_MAX) && (x > VIEWPORT_MIN);
+	bool insideY = (y < VIEWPORT_MAX) && (y > VIEWPORT_MIN);
+
+	return (insideX && insideY);
+}
+
+
+
+//GL version (Program 2)-----------------------------------------------------------------------------------------------------------------
+//#define GL
+#ifdef GL
+#define TESS 
+
+GLfloat transCoord = WINDOW_MAX/2.0;
+
+#ifdef TESS         // These have to be defined for the GLU Tesselator
+
+void beginCallback(GLenum which)
+{
+   glBegin(which);
+}
+
+void vertexCallback(void *data)
+{
+  glVertex3dv((GLdouble *) data); 
+}
+
+void endCallback(void)
+{
+   glEnd();
+}
+
+#endif
+
+void drawArrow( vertex *vp, int points )
+{
+    int i;
+
+#ifdef TESS
+
+    // Fill coord vector with positions and colors.
+    // This must be done for all coordinates outside of 
+    // the tesselator.  The tesselator will automatically 
+    // increase the size of the array to account for other
+    // vertices that it needs to add to tesselate properly.
+if(showFilled){
+    GLdouble coords[points][6];
+    for (i=0;i<points;i++) {
+        coords[i][0] = (vp+i)->x;        // Coordinates
+        coords[i][1] = (vp+i)->y;
+        coords[i][2] = 0.0;
+        coords[i][3] = 1.0;              // Colors
+        coords[i][4] = 0.0;
+        coords[i][5] = 0.0;
+    }
+
+    // Now start the process of calling the tesselator
+
+    GLUtesselator* tobj = gluNewTess();
+
+    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid (*)()) &vertexCallback);
+    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid (*) ())  &beginCallback);
+    gluTessCallback(tobj, GLU_TESS_END, endCallback);
+
+    gluTessBeginPolygon(tobj, NULL);
+    gluTessBeginContour(tobj);
+    for (i=0;i<points;i++) {
+        gluTessVertex(tobj, coords[i], coords[i] );
+    }
+    gluTessEndContour(tobj);
+    gluTessEndPolygon(tobj);
+    gluDeleteTess(tobj);
+    glutSwapBuffers();
+}
+//#else
+else
+{
+    glColor3f(1.0,0.0,0.0);
+    
+    glBegin(GL_LINE_LOOP);
+    for (i=0;i<points;i++)
+        glVertex2f( (vp+i)->x, (vp+i)->y );
+    glEnd();
+
+}
+#endif
+
+}
+void scaleForTheGLadies(GLfloat uniformScale)
+{
+	glTranslatef(transCoord,transCoord,0.0);
+	glScalef(uniformScale,uniformScale,1.0);
+	glTranslatef(-transCoord,-transCoord,0.0);
+}
+void rotateItGLStyle(GLfloat angle)
+{
+	//glPushMatrix();
+	glTranslatef(transCoord,transCoord,0.0);
+	glRotatef(angle,0.0,0.0,1.0);
+	glTranslatef(-transCoord,-transCoord,0.0);
+	//glPopMatrix();
+}
+void translateItForExtraCredit(GLfloat xmove, GLfloat ymove)
+{
+	//glTranslatef(transCoord,transCoord,0.0);
+	glTranslatef(xmove,ymove,0.0);
+	//glTranslatef(-transCoord,-transCoord,0.0);
+	//glutPostRedisplay();
+}
+
+void display( void )
+{
+
+    int inPoints;                       // The number of points in the arro
+    float point[100];                   // Array to hold homogenous coordinates for arrow
+    float *apts;                        // Pointer for point array
+
+    struct vertex inVertexArray[MAX/4];	/* array of vertices to hold points */
+    struct vertex *invp;                /* pointer for inVertexArray   */
+
+    /* Make sure to initialize the pointers! */
+
+    apts = &point[0];                  // the pointer to the array of points
+    invp = &inVertexArray[0];          // the pointer to the array of vertices
+
+    inPoints = 7;                      // the actual number of points in the arrow
+
+    glClear(GL_COLOR_BUFFER_BIT);  /*clear the window */
+
+    glLoadIdentity();              /* New - prior to any GL Operations, load identity matrix */           
+
+
+    /* Draw Arrow in Viewport */
+    glColor3f(1.0, 1.0, 1.0);
+
+	GLsizei vwidth = WINDOW_MAX - (WINDOW_MAX - (VIEWPORT_MAX - VIEWPORT_MIN));
+
+    // Make a local frame for the viewport 
+    glPushMatrix();
+    glLoadIdentity();
+    glRecti(VIEWPORT_MIN,VIEWPORT_MIN,VIEWPORT_MAX,VIEWPORT_MAX); 
+    glScissor(VIEWPORT_MIN, VIEWPORT_MIN, VIEWPORT_MAX-VIEWPORT_MIN, VIEWPORT_MAX-VIEWPORT_MIN);
+    glColor3f(1.0, 1.0, 1.0);
+    glPopMatrix();
+    glColor3f(0.6, 0.0, 1.0);
+    glEnable(GL_SCISSOR_TEST);
+    defineArrow( apts );           // Define the points for the arrow
+    toVertex( apts, invp, inPoints ); 
+
+
+	translateItForExtraCredit(xshift,yshift);
+	rotateItGLStyle(SPIN);
+	scaleForTheGLadies(SCALE_UNIFORM);
+
+
+
+    drawArrow( invp, inPoints );
+
+    glPolygonMode(GL_FRONT, GL_FILL);
+    glPolygonMode(GL_BACK, GL_FILL);
+
+    glDisable(GL_SCISSOR_TEST);
+    glutSwapBuffers();
+
+}
+//my version (Program 1)-------------------------------------------------------------------------------------------------------------------
+#else
+#include "globals.h"
+#include "prototypes.h"
+#include "sutherlandHodgman.cpp"
+#include <list>
 list<vertex*> outline;
 list<triangle> triangles;
 //matrix stuff
@@ -173,103 +379,118 @@ void PipeLine( float *vp, int vpts/*, list<vertex*> l*/ )
     //scale operation
     buildScale(SCALE_UNIFORM, SCALE_UNIFORM, SCALE_UNIFORM, TM);
     applyTransformation(vp, vpts, TM/*, l*/);
+
     	
     // Perform the rotation operation
     buildRotateZ( SPIN, TM );	
     applyTransformation( vp, vpts, TM/*, l*/ );
+
+    //for moving that thang
+    buildTranslate(xshift,yshift,0.0,TM);
+    applyTransformation(vp,vpts,TM);
+
+
     // Translate back to point
     buildTranslate( WINDOW_MAX/2, WINDOW_MAX/2, 0.0,  TM );
     applyTransformation( vp, vpts, TM/*, l*/ );   	
 
 }
-
-
-void defineArrow( float *apts/*, list<vertex*> l*/ )
-{
-   apts[ 0] = 350.0;  apts[ 1] = 450.0; apts[ 2] = 0.0; apts[ 3] = 1.0;
-   apts[ 4] = 550.0;  apts[ 5] = 450.0; apts[ 6] = 0.0; apts[ 7] = 1.0;
-   apts[ 8] = 550.0;  apts[ 9] = 350.0; apts[10] = 0.0; apts[11] = 1.0;
-   apts[12] = 650.0;  apts[13] = 500.0; apts[14] = 0.0; apts[15] = 1.0;
-   apts[16] = 550.0;  apts[17] = 650.0; apts[18] = 0.0; apts[19] = 1.0;
-   apts[20] = 550.0;  apts[21] = 550.0; apts[22] = 0.0; apts[23] = 1.0;
-   apts[24] = 350.0;  apts[25] = 550.0; apts[26] = 0.0; apts[27] = 1.0;
- //  apts[28] = 350.0;  apts[29] = 450.0; apts[30] = 0.0; apts[31] = 1.0;
-/*
-   vertex v6 = {350.0,550.0,0.0,1.0,NULL};
-   vertex v5 = {550.0,550.0,0.0,1.0,&v6};
-   vertex v4 = {550.0,650.0,0.0,1.0,&v5};
-   vertex v3 = {650.0,500.0,0.0,1.0,&v4};
-   vertex v2 = {550.0,350.0,0.0,1.0,&v3};
-   vertex v1 = {550.0,450.0,0.0,1.0,&v2};
-   vertex v0 = {350.0,450.0,0.0,1.0,&v1};
-
-   l.push_back(&v0);
-   l.push_back(&v1);
-   l.push_back(&v2);
-   l.push_back(&v3);
-   l.push_back(&v4);
-   l.push_back(&v5);
-   l.push_back(&v6);
-   /*
-   verts.push_back(&v0);
-   verts.push_back(&v1);
-   verts.push_back(&v2);
-   verts.push_back(&v3);
-   verts.push_back(&v4);
-   verts.push_back(&v5);
-   verts.push_back(&v6);*/
-}
-
-void toVertex ( float *apts, struct vertex *vp, int pts )
-{
-	int i;
-
-	for (i=0;i<pts;i++)
-	{
-	   (vp+i)->x = *(apts+(i*4)+0);
-	   (vp+i)->y = *(apts+(i*4)+1);
-	   (vp+i)->z = *(apts+(i*4)+2);
-	   (vp+i)->w = *(apts+(i+4)+3);
-	}
-}
-
-
-void drawArrow(list<vertex*> l, list<triangle> tris/*vertex *vp, int points*/ )
-{
-	if(!showFilled)
-	{
-    		list<vertex*>::iterator it;
+//*void drawArrow(list<vertex*> l, list<triangle> tris/*vertex *vp, int points*/ )
+///{
+	//if(!showFilled)
+	//{
+    	//	list<vertex*>::iterator it;
 		//cout <<"------------------------------\n";
     
-    		glBegin(GL_LINE_LOOP);
-    		for (it=l.begin();it!=l.end();++it/*i=0;i<points;i++*/)
-		{
-        		glVertex2f( (*it)->x, (*it)->y/*(vp+i)->x,(vp+i)->y*/ );
+    		/*glBegin(GL_LINE_LOOP);
+    		for (it=l.begin();it!=l.end();++it/*i=0;i<points;i++*)
+		//{
+        	//	glVertex2f( (*it)->x, (*it)->y/*(vp+i)->x,(vp+i)->y*/// );
 		//	cout<<"point "<<i<<" is "<<it->x/*(vp+i)->x*/<<", " << /*(vp+i)->y*/it->y <<endl;
-    		}
-    		glEnd();
-	}
+    		//}
+    		//glEnd();
+	//}
 	//cout << l.size()<<" length"<<endl;
-	else
-		theresANewPolygonInTown(tris);
-}
+	//else
+	//	theresANewPolygonInTown(tris);
+//}
 
+#define TESS 
 
-void myinit( void )
+GLfloat transCoord = WINDOW_MAX/2.0;
+
+#ifdef TESS         // These have to be defined for the GLU Tesselator
+
+void beginCallback(GLenum which)
 {
-/* attributes */
-
-      glClearColor(0.0, 0.0, 0.0, 1.0); /* black background */
-      glPointSize(1.0);
-
-/* set up viewing */
-
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      gluOrtho2D(0.0, (float) WINDOW_MAX, 
-                 0.0, (float) WINDOW_MAX);
-      glMatrixMode(GL_MODELVIEW);
+   glBegin(which);
 }
+
+void vertexCallback(void *data)
+{
+  glVertex3dv((GLdouble *) data); 
+}
+
+void endCallback(void)
+{
+   glEnd();
+}
+
+#endif
+
+void drawArrow( vertex *vp, int points )
+{
+    int i;
+
+#ifdef TESS
+
+    // Fill coord vector with positions and colors.
+    // This must be done for all coordinates outside of 
+    // the tesselator.  The tesselator will automatically 
+    // increase the size of the array to account for other
+    // vertices that it needs to add to tesselate properly.
+if(showFilled){
+    GLdouble coords[points][6];
+    for (i=0;i<points;i++) {
+        coords[i][0] = (vp+i)->x;        // Coordinates
+        coords[i][1] = (vp+i)->y;
+        coords[i][2] = 0.0;
+        coords[i][3] = 1.0;              // Colors
+        coords[i][4] = 0.0;
+        coords[i][5] = 0.0;
+    }
+
+    // Now start the process of calling the tesselator
+
+    GLUtesselator* tobj = gluNewTess();
+
+    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid (*)()) &vertexCallback);
+    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid (*) ())  &beginCallback);
+    gluTessCallback(tobj, GLU_TESS_END, endCallback);
+
+    gluTessBeginPolygon(tobj, NULL);
+    gluTessBeginContour(tobj);
+    for (i=0;i<points;i++) {
+        gluTessVertex(tobj, coords[i], coords[i] );
+    }
+    gluTessEndContour(tobj);
+    gluTessEndPolygon(tobj);
+    gluDeleteTess(tobj);
+    glutSwapBuffers();
+}
+//#else
+else
+{
+    glColor3f(1.0,0.0,0.0);
+    
+    glBegin(GL_LINE_LOOP);
+    for (i=0;i<points;i++)
+        glVertex2f( (vp+i)->x, (vp+i)->y );
+    glEnd();
+
+}
+}
+#endif
 void display( void )
 {
 
@@ -336,41 +557,27 @@ void display( void )
 
 	list<vertex*> verts;
 	arrayToList(invp,numArrowPoints,verts);	
-	//linkEm(verts);
+	
 	outline = verts;
 	
 	list<triangle> tris;
 
-//	tesselateItSucka(verts,tris);
+	//tesselateItSucka(verts,tris);
 
 	triangles = tris;
 
 //   	cout<<verts.size()<<endl; 
-    glColor3f(1.0, 0.0, 0.0);
+    glColor3f(1.0, 0.0, 1.0);
     /* Draw Scaled and Rotated Arrow */
-    drawArrow(outline, triangles );
+    drawArrow(invp, numArrowPoints );
     glutSwapBuffers();
 
 	delete outLengthPtr;
 	delete outvp;
  }
+#endif
 
-
-void SpinDisplay(void)
-{
-    SPIN = SPIN + DELTA_SPIN;
-    if (SPIN > 360.0) SPIN = SPIN - 360.0;
-    glutPostRedisplay();
-}
-bool insideViewport(int x, int y)
-{
-	bool insideX = (x < VIEWPORT_MAX) && (x > VIEWPORT_MIN);
-	bool insideY = (y < VIEWPORT_MAX) && (y > VIEWPORT_MIN);
-
-	return (insideX && insideY);
-}
-
-
+//unconditional compile----------------------------------------------------------------------------------------------------------------
 void mouse(int button, int state, int x, int y) 
 {
     switch (button) {
@@ -408,6 +615,7 @@ void mouse(int button, int state, int x, int y)
             break;
     }
 }
+
 void keyboard( unsigned char key, int x, int y )
 { 
     if ( key == 'q' || key == 'Q') exit(0);
@@ -435,16 +643,24 @@ void keyboard( unsigned char key, int x, int y )
 	glutPostRedisplay();
     }
 }
-/*
-void reshape(int width,int height)
+void greatSpecsBro(int key, int x, int y)
 {
-	glViewport(100,100,(GLsizei)width-200,(GLsizei)height-200);
+	if (key == GLUT_KEY_UP) {yshift+=5; glutPostRedisplay();}
+	if (key == GLUT_KEY_DOWN) {yshift-=5; glutPostRedisplay();}
+	if (key == GLUT_KEY_LEFT) {xshift-=5; glutPostRedisplay();}
+	if (key == GLUT_KEY_RIGHT) {xshift+=5; glutPostRedisplay();}
+}
+/*
+void reshape (int width, int height)
+{
+	glViewport(100.0,100.0,(GLsizei)(width-100),(GLsizei)(height-100));
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60,(GLfloat)width/(GLfloat)height,1.0,100.0);
+    	gluOrtho2D(0.0, (float) width, 
+          	  0.0, (float) height);
 	glMatrixMode(GL_MODELVIEW);
-	
-}	*/
+	glLoadIdentity();
+}*/
 int main(int argc, char** argv)
 {
     glutInit(&argc,argv);
@@ -455,6 +671,7 @@ int main(int argc, char** argv)
     myinit(); 
     glutMouseFunc(mouse);
     glutKeyboardFunc(keyboard);
+    glutSpecialFunc(greatSpecsBro);
     glutDisplayFunc(display); 
 
 //	glutReshapeFunc(reshape);

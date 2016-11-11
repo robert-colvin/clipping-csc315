@@ -45,6 +45,9 @@ void Output(vertex newVertex, int *outLength, vertex *outVertexArray)
 	(*outLength)++;
 	outVertexArray[*outLength - 1].x = newVertex.x;
 	outVertexArray[*outLength - 1].y = newVertex.y;
+
+	if(*outLength>1)
+		outVertexArray[*outLength - 2].next = &outVertexArray[*outLength - 1];
 }
 
 void SutherlandHodgmanPolygonClip(vertex *inVertexArray,

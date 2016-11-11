@@ -1,25 +1,32 @@
 OBJS= singly.o myTesselate.o myVertexMath.o #sutherlandHodgman.o
 LIBS=-lglut -lGLU -lGL
 CC=g++
-#CFLAG=-O3
+#CFLAG=-O2
 HEADERS=structs.h singly.h globals.h prototypes.h myVertexMath.h
 
-flintstones ?= n
-ifeq ($(flintstones), y)
-	CFLAG += -g -DOLD
+#old ?= n
+#ifeq ($(old), y)
+#	CFLAG += -g -DOLD
+#else
+#	CFLAG += -O2
+#endif
+
+gl ?= n
+ifeq ($(gl), y)
+	CFLAG += -g -DGL
 else
 	CFLAG += -O2
 endif
 
 
 
-all: Program1
+all: Pwnage
 
-Program1 : lukewarm.o $(OBJS)
-	$(CC) $(CFLAG) lukewarm.o $(OBJS) -o Program1 $(LIBS)
+Pwnage : catastrophe.o $(OBJS)
+	$(CC) $(CFLAG) catastrophe.o $(OBJS) -o Pwnage $(LIBS)
 
-lukewarm.o: lukewarm.cpp $(HEADERS)
-	$(CC) lukewarm.cpp $(CFLAG) -c
+catastrophe.o: catastrophe.cpp $(HEADERS)
+	$(CC) catastrophe.cpp $(CFLAG) -c
 
 singly.o: singly.cpp $(HEADERS)
 	$(CC) singly.cpp $(CLAG) -c

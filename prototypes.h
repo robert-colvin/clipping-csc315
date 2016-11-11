@@ -39,7 +39,7 @@ GLfloat crossProduct(struct vertex*, struct vertex*, struct vertex*);
 //tesselator primed
 void tesselateItSucka(singly linkedlist, vector<triangle> triangles);
 
-void commenceTesselation(singly, vector<triangl>, vertex*, vertex*, vertex*);
+void commenceTesselation(singly, vector<triangle>, vertex*, vertex*, vertex*);
 
 void lineEmUpSucka(singly)
 

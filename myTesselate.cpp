@@ -269,7 +269,7 @@ void makeThePolygonSucka(list<vertex*> vertices)
 }
 //post tesselation polygon goodness
 void theresANewPolygonInTown(list<triangle> triangles)
-{//loop through vector of triangle structs and feed each point to glBegin as TRIANGLES
+{//loop through vector of triangle structs and feed each point to glBegin as filled TRIANGLES
 	list<triangle>::iterator it;
 
 	glBegin(GL_TRIANGLES);
@@ -324,19 +324,19 @@ void commenceTesselation(list<vertex*> vertices, list<triangle> triangles, struc
 {
 	
 	if (p1==NULL || p2 ==NULL || p3==NULL)//basically an error check
-		return;
+		exit(0)/*return*/;
 	if(crossProduct(p1, p2, p3) == 0.0)//if the 3 points we're working on are colinear, delete the second point and get out
-	{
+	{	cout<<329<<endl;
 		vertices.remove(p2);
 		return;
 	}
 	else if(crossProduct(p1, p2, p3) < 0.0 && 
 		noIntersects(vertices, p1, p3)/* && inThatThang(linkedlist,p1, p3)*/) //if 3 points are countersclockwise, don't intersect anything if triangulated, and
-	{
+	{	cout<<335<<endl;
 		//add a triangle struct of these points to the vector
 		struct triangle TDawg = {p1, p2, p3};
 		triangles.push_back(TDawg);
-
+		
 		//delete point from list	
 		vertices.remove(p2);
 
@@ -351,20 +351,23 @@ void commenceTesselation(list<vertex*> vertices, list<triangle> triangles, struc
 		}
 		else{
 			p3=p3->next;
-		}
+		}cout<<354<<endl;
 		//recursion incoming w/ new points
 		commenceTesselation(vertices,triangles, p1, p2 , p3);
-	}
+	}	cout<<"////////"<<triangles.size()<<endl;
 }
 
 //checks for "special" 4 sided test cases, otherwise calls previous tesselator and manages triangles
 void tesselateItSucka(list<vertex*> vertices, list<triangle> triangles)
 {//starts tesselation
+	
+	triangles.clear();	//empty triangles list first
+
 	//grab first 3 points
 	struct vertex *p1 = vertices.front();
 	struct vertex *p2 = p1->next;
 	struct vertex *p3 = p2->next;
-	
+	cout<<p1->x<<" "<<p2->x<<" "<<p3->x<<" "<<p3->next->x<<" "<<p3->next->next->x<<" "<<p3->next->next->next->x<<" "<<p3->next->next->next->next->x<<endl;
 	//draw outline of shape if all you have onscreen are points
 	//lineEmUpSucka(linkedlist);
 	if (vertices.size() < 3)//less than 3 points, do nothing
@@ -395,11 +398,11 @@ void tesselateItSucka(list<vertex*> vertices, list<triangle> triangles)
 				if (angleBetween(p2,p3,vertices.front()) > angleBetween(p2,p3,p3->next))//if line will not exist within polygon
 				{//draw other line in quadrilateral, delete vertex from list, add triangle to vector; rinse repeat for following
 
-					glBegin(GL_LINES);
-						glVertex2f(p2->x, p2->y);
-						glVertex2f(p4->x, p4->y);
-					glEnd();
-					glFlush();
+//					glBegin(GL_LINES);
+//						glVertex2f(p2->x, p2->y);
+//						glVertex2f(p4->x, p4->y);
+//					glEnd();
+//					glFlush();
 					
 					vertices.remove(p3);
 
@@ -411,12 +414,12 @@ void tesselateItSucka(list<vertex*> vertices, list<triangle> triangles)
 				}
 				else
 				{
-					glBegin(GL_LINES);
+/*					glBegin(GL_LINES);
 						glVertex2f(p1->x, p1->y);
 						glVertex2f(p3->x, p3->y);
 					glEnd();
 					glFlush();
-	
+*/			
 					vertices.remove(p2);
 					
 					struct triangle TDawg = {p1, p2, p3};
@@ -432,13 +435,13 @@ void tesselateItSucka(list<vertex*> vertices, list<triangle> triangles)
 
 				if(angleBetween(p2,p3,vertices.front()) < angleBetween(p2,p3,p3->next))
 				{
-					glBegin(GL_LINES);
+/*					glBegin(GL_LINES);
 						glVertex2f(p1->x, p1->y);
 						glVertex2f(p3->x, p3->y);
 					glEnd();
 					glFlush();
 
-					struct triangle TDawg = {p1, p2, p3};
+*/					struct triangle TDawg = {p1, p2, p3};
 					struct triangle TShizzle = {p1, p3, p4};
 					triangles.push_back(TShizzle);
 					triangles.push_back(TDawg);
@@ -447,13 +450,13 @@ void tesselateItSucka(list<vertex*> vertices, list<triangle> triangles)
 				else
 				{
 					vertex *p4 = vertices.back();
-					glBegin(GL_LINES);
+/*					glBegin(GL_LINES);
 						glVertex2f(p2->x, p2->y);
 						glVertex2f(p4->x, p4->y);
 					glEnd();
 					glFlush();
 
-					struct triangle TDawg = {p2, p3, p4};
+*/					struct triangle TDawg = {p2, p3, p4};
 					struct triangle TShizzle = {p1, p2, p4};
 					triangles.push_back(TDawg);
 					triangles.push_back(TShizzle);
