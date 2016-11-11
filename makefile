@@ -4,12 +4,6 @@ CC=g++
 #CFLAG=-O2
 HEADERS=structs.h singly.h globals.h prototypes.h myVertexMath.h
 
-#old ?= n
-#ifeq ($(old), y)
-#	CFLAG += -g -DOLD
-#else
-#	CFLAG += -O2
-#endif
 
 gl ?= n
 ifeq ($(gl), y)
